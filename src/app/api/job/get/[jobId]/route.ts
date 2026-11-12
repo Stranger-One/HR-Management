@@ -4,20 +4,17 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { jobId: string } }
+  { params }: { params: Promise<{ jobId: string }> },
 ) {
   try {
     await connectDB();
 
-    const { jobId } = params;
+    const { jobId } = await params;
 
     const job = await Job.findById(jobId);
 
     if (!job) {
-      return NextResponse.json(
-        { error: "Job not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Job not found" }, { status: 404 });
     }
 
     return NextResponse.json({ job });
@@ -25,7 +22,7 @@ export async function GET(
     console.error(error);
     return NextResponse.json(
       { error: (error as Error).message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

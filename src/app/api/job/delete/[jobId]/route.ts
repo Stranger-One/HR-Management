@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { jobId: string } }
+  { params }: { params: Promise<{ jobId: string }> },
 ) {
   try {
     await connectDB();
@@ -14,7 +14,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 400 });
     }
 
-    const { jobId } = params;
+    const { jobId } = await params;
 
     const job = await Job.findById(jobId);
     if (!job) {
@@ -24,21 +24,20 @@ export async function DELETE(
     if (job.createdBy.toString() !== user.id) {
       return NextResponse.json(
         { error: "You are not allowed to delete this job" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     await Job.findByIdAndDelete(jobId);
 
     return NextResponse.json(
-      { message: "Deleted successfully", job},
-      { status: 200 }
+      { message: "Deleted successfully", job },
+      { status: 200 },
     );
   } catch (error) {
     return NextResponse.json(
       { message: (error as Error).message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
- 

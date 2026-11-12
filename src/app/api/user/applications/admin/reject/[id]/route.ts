@@ -7,7 +7,7 @@ import { sendRejectionMail } from "@/lib/emailServices";
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await connectDB();
@@ -17,23 +17,33 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const applicationId = params.id;
+    const { id: applicationId } = await params;
     if (!mongoose.Types.ObjectId.isValid(applicationId)) {
-      return NextResponse.json({ error: "Invalid application ID" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid application ID" },
+        { status: 400 },
+      );
     }
 
-    const application = await Application.findById(applicationId).populate("appliedBy")
+    const application =
+      await Application.findById(applicationId).populate("appliedBy");
 
     if (!application) {
-      return NextResponse.json({ error: "Application not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Application not found" },
+        { status: 404 },
+      );
     }
 
-    await sendRejectionMail( application )
+    await sendRejectionMail(application);
 
     // Delete the application
     await Application.findByIdAndDelete(applicationId);
 
-    return NextResponse.json({ message: "Application deleted successfully", application }, { status: 200 });
+    return NextResponse.json(
+      { message: "Application deleted successfully", application },
+      { status: 200 },
+    );
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

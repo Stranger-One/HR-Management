@@ -25,7 +25,7 @@ import { Button } from "./ui/button";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import toast from "react-hot-toast";
-import { useEffect, useState, JSX } from "react";
+import { useEffect, useRef, useState, JSX } from "react";
 import ProfileModal from "./ProfileModal";
 import { getEmployeeTasks, getTasks } from "@/redux/features/taskSlice";
 import { fetchMails } from "@/redux/features/mailSlice";
@@ -45,6 +45,7 @@ export default function Sidebar() {
   const [openProfileModal, setOpenProfileModal] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] =
     useState<boolean>(false);
+  const previousActivityCount = useRef<number | null>(null);
 
   const dispatch = useDispatch();
   const pathname = usePathname();
@@ -157,6 +158,12 @@ export default function Sidebar() {
   ];
 
   useEffect(() => {
+    setNotificationsEnabled(
+      window.localStorage.getItem("notifications-enabled") === "true",
+    );
+  }, []);
+
+  useEffect(() => {
     if (userData && userData.role === "admin") {
       dispatch(getTasks() as any);
     } else if (userData && userData.role === "employee") {
@@ -176,6 +183,52 @@ export default function Sidebar() {
       }
     }
   }, [userData]);
+
+  useEffect(() => {
+    const activityCount = (tasks?.length ?? 0) + (mails?.length ?? 0);
+
+    if (previousActivityCount.current === null) {
+      previousActivityCount.current = activityCount;
+      return;
+    }
+
+    const hasNewActivity = activityCount > previousActivityCount.current;
+    previousActivityCount.current = activityCount;
+
+    if (
+      hasNewActivity &&
+      notificationsEnabled &&
+      typeof window !== "undefined" &&
+      Notification.permission === "granted"
+    ) {
+      new Notification("New activity", {
+        body: "You have new mail or assigned work.",
+        icon: "/images/alplogo.webp",
+      });
+    }
+  }, [mails?.length, notificationsEnabled, tasks?.length]);
+
+  const handleNotificationChange = async (enabled: boolean) => {
+    if (!enabled) {
+      setNotificationsEnabled(false);
+      window.localStorage.setItem("notifications-enabled", "false");
+      return;
+    }
+
+    if (!("Notification" in window)) {
+      toast.error("Browser notifications are not supported");
+      return;
+    }
+
+    const permission = await Notification.requestPermission();
+    const allowed = permission === "granted";
+    setNotificationsEnabled(allowed);
+    window.localStorage.setItem("notifications-enabled", String(allowed));
+
+    if (!allowed) {
+      toast.error("Notification permission was not granted");
+    }
+  };
 
   const handleLogout = async () => {
     toast.loading("Logging Out...", { id: "logout" });
@@ -283,7 +336,7 @@ export default function Sidebar() {
         </Badge>
         <div className="w-full h-full space-y-4">
           {/* Notification Toggle */}
-          {/* <Label
+          <Label
             htmlFor="notification"
             className="flex items-center gap-2 w-full justify-between cursor-pointer px-3"
           >
@@ -291,10 +344,10 @@ export default function Sidebar() {
             <Switch
               id="notification"
               checked={notificationsEnabled}
-              onCheckedChange={(val: boolean) => setNotificationsEnabled(val)}
+              onCheckedChange={handleNotificationChange}
               className="shadow-md"
             />
-          </Label> */}
+          </Label>
 
           <Button
             type="button"

@@ -6,7 +6,7 @@ import { authenticate } from "@/lib/auth";
 // Update interview
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { interviewId: string } }
+  { params }: { params: Promise<{ interviewId: string }> },
 ) {
   await connectDB();
   const user = await authenticate(req);
@@ -31,7 +31,7 @@ export async function PUT(
     const updatedInterview = await Interview.findByIdAndUpdate(
       interviewId,
       updateData,
-      { new: true }
+      { new: true },
     );
     return NextResponse.json({ interview: updatedInterview });
   } catch (err) {
@@ -43,7 +43,7 @@ export async function PUT(
 // Delete interview
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { interviewId: string } }
+  { params }: { params: Promise<{ interviewId: string }> },
 ) {
   await connectDB();
   const user = await authenticate(req);

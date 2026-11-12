@@ -9,6 +9,7 @@ export interface IUser extends Document {
   password: string;
   phone?: string;
   role: UserRole;
+  resume?: string;
   profileImage?: string;
   employeeId?: string;
   otherDetails?: string;
@@ -24,7 +25,7 @@ const UserSchema = new Schema<IUser>(
     role: {
       type: String,
       enum: ["user", "admin", "employee"],
-      default: "user", 
+      default: "user",
     },
     employeeId: { type: String, required: false },
     otherDetails: { type: String, required: false },
@@ -32,7 +33,7 @@ const UserSchema = new Schema<IUser>(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 delete mongoose.models.User;

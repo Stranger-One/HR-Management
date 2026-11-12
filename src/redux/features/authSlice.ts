@@ -9,6 +9,8 @@ interface AuthState {
     name: string;
     phone?: string;
     profileImage?: string;
+    employeeId?: string;
+    otherDetails?: string;
   } | null;
 
   isAutheticated: boolean;
@@ -30,14 +32,14 @@ export const fetchUser = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(error);
     }
-  }
+  },
 );
 
 export const loginUser = createAsyncThunk(
   "user/loginUser",
   async (
     { email, password }: { email: string; password: string },
-    { rejectWithValue }
+    { rejectWithValue },
   ) => {
     try {
       const res = await fetch("/api/auth/login", {
@@ -55,7 +57,7 @@ export const loginUser = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(error);
     }
-  }
+  },
 );
 
 export const registerUser = createAsyncThunk(
@@ -72,7 +74,7 @@ export const registerUser = createAsyncThunk(
       name: string;
       phone?: string;
     },
-    { rejectWithValue }
+    { rejectWithValue },
   ) => {
     try {
       const res = await fetch("/api/auth/signup", {
@@ -90,7 +92,7 @@ export const registerUser = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(error);
     }
-  }
+  },
 );
 
 export const verifyUser = createAsyncThunk(
@@ -103,7 +105,7 @@ export const verifyUser = createAsyncThunk(
       email: string;
       otp: string;
     },
-    { rejectWithValue }
+    { rejectWithValue },
   ) => {
     try {
       const res = await fetch("/api/auth/verify-otp", {
@@ -121,7 +123,7 @@ export const verifyUser = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(error);
     }
-  }
+  },
 );
 
 export const updateProfile = createAsyncThunk(
@@ -134,36 +136,39 @@ export const updateProfile = createAsyncThunk(
           "Content-Type": "application/json",
         },
         body: JSON.stringify(details),
-      })
+      });
 
-      const data = await res.json()
+      const data = await res.json();
       // console.log(data)
-      return data
+      return data;
     } catch (error) {
       return rejectWithValue(error);
     }
-  }
-)
+  },
+);
 
 export const updateEmployee = createAsyncThunk(
   "user/updateEmployee",
-  async ({ details, id }: { details: any; id: string }, { rejectWithValue }) => {
+  async (
+    { details, id }: { details: any; id: string },
+    { rejectWithValue },
+  ) => {
     try {
       const res = await fetch(`/api/employees/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({details}),
-      })
+        body: JSON.stringify({ details }),
+      });
 
-      const data = await res.json()
-      return data
+      const data = await res.json();
+      return data;
     } catch (error) {
       return rejectWithValue(error);
     }
-  }
-)
+  },
+);
 
 export const deleteEmployee = createAsyncThunk(
   "user/deleteEmployee",
@@ -174,15 +179,15 @@ export const deleteEmployee = createAsyncThunk(
         headers: {
           "Content-Type": "application/json",
         },
-      })
+      });
 
-      const data = await res.json()
-      return data
+      const data = await res.json();
+      return data;
     } catch (error) {
       return rejectWithValue(error);
     }
-  }
-)
+  },
+);
 
 const initialState: AuthState = {
   userData: null,
@@ -290,7 +295,6 @@ const authSlice = createSlice({
     builder
       .addCase(updateEmployee.pending, (state) => {
         // state.loading = true;
-        
       })
       .addCase(updateEmployee.fulfilled, (state, action) => {
         // console.log(action.payload)

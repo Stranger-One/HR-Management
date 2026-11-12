@@ -12,6 +12,7 @@ import { IUser } from "@/models/User";
 import axios from "axios";
 import { LoaderCircle } from "lucide-react";
 import { toast } from "react-hot-toast";
+import type { AppDispatch } from "@/redux/store";
 
 // Define the form data structure
 interface ProfileFormInputs {
@@ -25,18 +26,18 @@ interface ProfileFormInputs {
 
 const ProfileModal = ({ close }: { close: () => void }) => {
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const { userData } = useSelector(
-    (state: RootState) => state.auth
+  const { userData } = useSelector((state: RootState) => state.auth);
+  const [profileImage, setProfileImage] = useState<string | null>(
+    userData?.profileImage || null,
   );
-  const [profileImage, setProfileImage] = useState<string | null>(userData?.profileImage || null);
   const [loading, setLoading] = useState(false);
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<IUser>({
+  } = useForm<ProfileFormInputs>({
     defaultValues: {
       name: userData?.name || "",
       email: userData?.email || "",
@@ -46,10 +47,11 @@ const ProfileModal = ({ close }: { close: () => void }) => {
     },
   });
 
-  const initials = userData?.name
-    ?.split(" ")
-    .map((n) => n[0])
-    .join("") || "U";
+  const initials =
+    userData?.name
+      ?.split(" ")
+      .map((n) => n[0])
+      .join("") || "U";
 
   const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`;
   const UPLOAD_PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
@@ -64,7 +66,7 @@ const ProfileModal = ({ close }: { close: () => void }) => {
         const formData = new FormData();
         formData.append("file", imageFile);
         formData.append("upload_preset", UPLOAD_PRESET || "");
-        
+
         const response = await axios.post(CLOUDINARY_URL, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
@@ -80,7 +82,7 @@ const ProfileModal = ({ close }: { close: () => void }) => {
 
       // Only dispatch update if user is admin
       // if (userData?.role === "admin") {
-        await dispatch(updateProfile({ details: data })).unwrap();
+      await dispatch(updateProfile({ details: data })).unwrap();
       // }
 
       close();
@@ -134,7 +136,9 @@ const ProfileModal = ({ close }: { close: () => void }) => {
                 disabled={loading}
               />
               <Avatar className="w-full h-full">
-                <AvatarImage src={profileImage || "/images/profile-placeholder.png"} />
+                <AvatarImage
+                  src={profileImage || "/images/profile-placeholder.png"}
+                />
                 <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
               <div className="h-full w-full opacity-0 absolute top-0 left-0 bg-secondary/50 group-hover:opacity-100 duration-300 transition-opacity flex items-center justify-center rounded-full">
@@ -154,7 +158,9 @@ const ProfileModal = ({ close }: { close: () => void }) => {
               disabled={loading}
             />
             {errors.name && (
-              <span className="text-red-500 text-sm">{errors.name.message}</span>
+              <span className="text-red-500 text-sm">
+                {errors.name.message}
+              </span>
             )}
           </div>
 
@@ -163,12 +169,12 @@ const ProfileModal = ({ close }: { close: () => void }) => {
             <input
               type="text"
               readOnly
-              {...register("email", { 
-                required: "Email is required", 
+              {...register("email", {
+                required: "Email is required",
                 pattern: {
                   value: /^\S+@\S+$/i,
-                  message: "Please enter a valid email"
-                }
+                  message: "Please enter a valid email",
+                },
               })}
               className="border-b-2 border-gray-300 focus:border-primary outline-0 text-center text-muted-foreground w-full max-w-xs text-secondary"
             />
@@ -229,7 +235,8 @@ const ProfileModal = ({ close }: { close: () => void }) => {
             >
               {loading ? (
                 <>
-                  Updating... <LoaderCircle className="ml-2 animate-spin" size={16} />
+                  Updating...{" "}
+                  <LoaderCircle className="ml-2 animate-spin" size={16} />
                 </>
               ) : (
                 <>

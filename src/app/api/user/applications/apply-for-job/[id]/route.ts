@@ -34,14 +34,15 @@ import { NextResponse, NextRequest } from "next/server";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await connectDB();
-    const {id: jobId} = await params; // job id corresponds to 'job' in schema
+    const { id: jobId } = await params; // job id corresponds to 'job' in schema
     const user = authenticate(req as any);
-    // console.log(user)
-
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     // if (user.role !== "user") {
     //   return NextResponse.json(
@@ -51,13 +52,15 @@ export async function POST(
     // }
 
     const formData = await req.formData();
-    
-    const appliedBy = formData.get("appliedBy") as string || user.id;
+
+    const appliedBy = (formData.get("appliedBy") as string) || user.id;
     const userLocation = formData.get("userLocation") as string;
     const skillsString = formData.get("skills") as string;
     const yearOfExperienceString = formData.get("yearOfExperience") as string; // NEW/RENAMED
     const ratingString = formData.get("rating") as string; // RENAMED
-    const userProfileImageFile = formData.get("userProfileImage") as File | null; // RENAMED & File
+    const userProfileImageFile = formData.get(
+      "userProfileImage",
+    ) as File | null; // RENAMED & File
     const resumeFile = formData.get("resume") as File;
 
     // --- Validation and Conversion ---
@@ -74,7 +77,7 @@ export async function POST(
       if (!value) {
         return NextResponse.json(
           { error: `${key} is required.` },
-          { status: 400 }
+          { status: 400 },
         );
       }
     }
@@ -82,22 +85,34 @@ export async function POST(
     if (!resumeFile) {
       return NextResponse.json(
         { error: "Resume file is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const yearOfExperience = parseFloat(yearOfExperienceString);
     const rating = parseFloat(ratingString);
-    const skillsArray = skillsString.split(',').map(s => s.trim()).filter(Boolean);
+    const skillsArray = skillsString
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
 
     if (isNaN(yearOfExperience) || yearOfExperience < 0) {
-      return NextResponse.json({ error: "Invalid Year of Experience value." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid Year of Experience value." },
+        { status: 400 },
+      );
     }
     if (isNaN(rating) || rating < 0 || rating > 5) {
-      return NextResponse.json({ error: "Invalid rating value. Must be between 0 and 5." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid rating value. Must be between 0 and 5." },
+        { status: 400 },
+      );
     }
     if (skillsArray.length === 0) {
-      return NextResponse.json({ error: "Skills field cannot be empty." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Skills field cannot be empty." },
+        { status: 400 },
+      );
     }
 
     // Check if the user has already applied
@@ -109,20 +124,26 @@ export async function POST(
     if (existingApplication) {
       return NextResponse.json(
         { error: "You have already applied for this job." },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
     // --- File Uploads to Cloudinary ---
 
     // 1. Upload Resume
-    const resumeUploadResult = await uploadFileToCloudinary(resumeFile, "job/resumes");
+    const resumeUploadResult = await uploadFileToCloudinary(
+      resumeFile,
+      "job/resumes",
+    );
 
     if (!resumeUploadResult.secure_url) {
       console.error("Cloudinary resume upload failed:", resumeUploadResult);
       return NextResponse.json(
-        { error: "Resume upload failed. Try again.", details: resumeUploadResult },
-        { status: 500 }
+        {
+          error: "Resume upload failed. Try again.",
+          details: resumeUploadResult,
+        },
+        { status: 500 },
       );
     }
 
@@ -130,16 +151,21 @@ export async function POST(
 
     // 2. Upload Profile Image (if provided)
     if (userProfileImageFile) {
-      const imageUploadResult = await uploadFileToCloudinary(userProfileImageFile, "job/profile_images");
+      const imageUploadResult = await uploadFileToCloudinary(
+        userProfileImageFile,
+        "job/profile_images",
+      );
 
       if (imageUploadResult.secure_url) {
         userProfileImageUrl = imageUploadResult.secure_url;
       } else {
         // Log error but continue since the image is optional in the schema
-        console.error("Cloudinary profile image upload failed:", imageUploadResult);
+        console.error(
+          "Cloudinary profile image upload failed:",
+          imageUploadResult,
+        );
       }
     }
-
 
     // --- Create Application Document ---
 
@@ -155,26 +181,32 @@ export async function POST(
     });
     // console.log("Application saved in DB:", application);
 
-    const appUser = await User.findById(appliedBy).select("name email profileImage");
-    const appJob = await Job.findById(jobId).select("designation jobDescription workMode companyDetails employmentType");
+    const appUser = await User.findById(appliedBy).select(
+      "name email profileImage",
+    );
+    const appJob = await Job.findById(jobId).select(
+      "designation jobDescription workMode companyDetails employmentType",
+    );
 
     if (!appUser || !appJob) {
       return NextResponse.json(
         { error: "Application created but not found for details." },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     application.appliedBy = appUser;
     application.job = appJob;
 
-
     return NextResponse.json(
       { message: "Application submitted successfully", application },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error: any) {
     console.error("API Error:", error);
-    return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: error.message || "Internal Server Error" },
+      { status: 500 },
+    );
   }
 }

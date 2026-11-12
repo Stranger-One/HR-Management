@@ -1,4 +1,25 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is a Next.js job and HR management application with MongoDB authentication, Cloudinary uploads, email delivery, Gemini summaries, and an embedded Sanity Studio.
+
+## Environment
+
+Copy `.env.example` to `.env.local` and replace every placeholder before starting the application.
+
+Required server variables:
+
+- `MONGODB_URI` for the MongoDB connection.
+- `JWT_SECRET` for authentication cookies and middleware verification.
+- `EMAIL_USER` and `EMAIL_PASS` for Gmail SMTP. Use a Gmail app password.
+- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` for server uploads.
+- `GEMINI_API_KEY` for employee performance summaries.
+
+Required public variables:
+
+- `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` and `NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET` for browser image uploads.
+- `NEXT_PUBLIC_SANITY_PROJECT_ID` and `NEXT_PUBLIC_SANITY_DATASET` for Sanity content and Studio.
+- `NEXT_PUBLIC_SANITY_API_VERSION` is optional and defaults to `2025-09-24`.
+- `NEXT_PUBLIC_API_URL` is optional and defaults to `http://localhost:3000`.
+
+Do not commit `.env.local` or real credentials.
 
 ## Getting Started
 
@@ -15,6 +36,14 @@ bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+The production checks are:
+
+```bash
+npm run lint
+npx --no-install tsc --noEmit
+npm run build
+```
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

@@ -12,6 +12,7 @@ import { IUser } from "@/models/User";
 import axios from "axios";
 import { LoaderCircle } from "lucide-react";
 import { toast } from "react-hot-toast";
+import type { AppDispatch } from "@/redux/store";
 
 // Define the form data structure
 interface ProfileFormInputs {
@@ -21,6 +22,7 @@ interface ProfileFormInputs {
   phone: string;
   employeeId?: string;
   otherDetails?: string;
+  profileImage?: string;
 }
 
 const EmployeeForm = ({
@@ -34,14 +36,14 @@ const EmployeeForm = ({
 }) => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(
-    employee?.profileImage || null
+    employee?.profileImage || null,
   );
   const [isRoleDropdownOpen, setIsRoleDropdownOpen] = useState(false);
   const { userData, isAutheticated } = useSelector(
-    (state: RootState) => state.auth
+    (state: RootState) => state.auth,
   );
   const [loading, setLoading] = useState(false);
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
   // console.log("employee:", employee);
   const {
@@ -50,15 +52,15 @@ const EmployeeForm = ({
     formState: { errors },
     watch,
     setValue,
-  } = useForm<IUser>({
+  } = useForm<ProfileFormInputs>({
     defaultValues: {
       name: employee?.name,
       email: employee?.email,
       role: employee?.role || "user",
-      phone: employee?.phone,
+      phone: employee?.phone || "",
       employeeId: employee?.employeeId,
       otherDetails: employee?.otherDetails,
-      // profileImage: employee?.profileImage,
+      profileImage: employee?.profileImage,
     },
   });
 
@@ -105,7 +107,7 @@ const EmployeeForm = ({
         setEmployees((prev) => {
           if (!prev) return prev;
           return prev.map((emp) =>
-            emp._id === employee._id ? { ...emp, ...data } : emp
+            emp._id === employee._id ? ({ ...emp, ...data } as IUser) : emp,
           );
         });
         close();
@@ -160,7 +162,9 @@ const EmployeeForm = ({
                 onChange={handleImageChange}
               />
               <Avatar className="w-full h-full">
-                <AvatarImage src={profileImage || "/images/profile-placeholder.png"} />
+                <AvatarImage
+                  src={profileImage || "/images/profile-placeholder.png"}
+                />
                 <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
               <div className="h-full w-full opacity-0 absolute top-0 left-0 bg-secondary/50 group-hover:opacity-100 duration-300 transition-opacity flex items-center justify-center rounded-full">
@@ -200,10 +204,11 @@ const EmployeeForm = ({
                 className="border-b-2 border-gray-300 focus-within:border-primary w-full flex items-center justify-between cursor-pointer py-2"
               >
                 <span className="text-muted-foreground text-center w-full">
-                  {roleOptions.find(option => option.value === selectedRole)?.label || "Select Role"}
+                  {roleOptions.find((option) => option.value === selectedRole)
+                    ?.label || "Select Role"}
                 </span>
-                <ChevronDown 
-                  size={16} 
+                <ChevronDown
+                  size={16}
                   className={`text-muted-foreground transition-transform duration-200 ${
                     isRoleDropdownOpen ? "rotate-180" : ""
                   }`}

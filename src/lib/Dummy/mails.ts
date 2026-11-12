@@ -1,6 +1,4 @@
-import { Mail } from "@/types";
-
-export const dummyMails: Mail[] = [
+export const dummyMails = [
   {
     id: "a1b2c3d4-e5f6-7a8b-c9d0-1e2f3a4b5c6d",
     subject: "Project Meeting Rescheduled",

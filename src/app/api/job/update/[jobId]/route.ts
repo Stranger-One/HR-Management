@@ -6,10 +6,9 @@ import { authenticate } from "@/lib/auth";
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { jobId: string } }
+  { params }: { params: Promise<{ jobId: string }> },
 ) {
-
-  try { 
+  try {
     await connectDB();
 
     const user = authenticate(req as any);
@@ -52,13 +51,13 @@ export async function PUT(
 
     return NextResponse.json(
       { message: "Job updated successfully", job: updatedJob },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error: any) {
     console.error("Error updating job:", error);
     return NextResponse.json(
       { message: "Error updating job", error: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

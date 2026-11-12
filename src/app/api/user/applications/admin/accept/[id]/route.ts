@@ -7,7 +7,7 @@ import { sendApproveMail } from "@/lib/emailServices";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     await connectDB();
@@ -21,24 +21,34 @@ export async function PATCH(
     //   return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     // }
 
-    const {id:applicationId} = await params;
+    const { id: applicationId } = await params;
     // console.log("application id:", applicationId)
 
     if (!mongoose.Types.ObjectId.isValid(applicationId)) {
-      return NextResponse.json({ error: "Invalid application ID" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid application ID" },
+        { status: 400 },
+      );
     }
 
-    const application = await Application.findById(applicationId).populate("appliedBy")
-    
+    const application =
+      await Application.findById(applicationId).populate("appliedBy");
+
     if (!application) {
-      return NextResponse.json({ error: "Application not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Application not found" },
+        { status: 404 },
+      );
     }
 
     application.status = "accepted";
-    await sendApproveMail(application)
+    await sendApproveMail(application);
     await application.save();
 
-    return NextResponse.json({ message: "Application accepted", application }, { status: 200 });
+    return NextResponse.json(
+      { message: "Application accepted", application },
+      { status: 200 },
+    );
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
